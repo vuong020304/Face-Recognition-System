@@ -6,6 +6,20 @@ from face_core.recognizer import FaceRecognizer
 from utils.image_utils import load_image_from_url
 from utils.visualization import draw_faces, show_image
 
+# ====== CONSTANTS ======
+# Sample images used when initializing a sample gallery
+SAMPLE_IMAGES = [
+    "https://picsum.photos/300/300?random=1",
+    "https://picsum.photos/300/300?random=2",
+]
+
+# Default test inputs for quick demo runs
+DEFAULT_TEST_IMAGE = "test.jpg"
+DEFAULT_TEST_URL = "https://picsum.photos/400/400?random=3"
+
+# Supported image file extensions (used in file dialogs elsewhere)
+SUPPORTED_IMAGE_EXT = "*.jpg *.jpeg *.png *.bmp *.gif"
+
 def init_sample_gallery(gallery_manager):
     """Khởi tạo gallery mẫu nếu gallery trống"""
     if gallery_manager.gallery:
@@ -13,12 +27,7 @@ def init_sample_gallery(gallery_manager):
         return
     
     print("Khởi tạo gallery mẫu...")
-    sample_images = [
-        "https://picsum.photos/300/300?random=1",
-        "https://picsum.photos/300/300?random=2"
-    ]
-    
-    for i, url in enumerate(sample_images):
+    for i, url in enumerate(SAMPLE_IMAGES):
         img = load_image_from_url(url)
         if img is not None:
             success, msg = gallery_manager.add_person(f"Sample_Person_{i+1}", image=img)
@@ -70,6 +79,17 @@ def recognize_from_file(image_path, detector, recognizer):
     show_image(img_with_results, title)
     
     return results
+
+def recognize_from_source(source, detector, recognizer):
+    """Dispatch wrapper: choose between local file path and URL recognition."""
+    if not source:
+        print("No source provided")
+        return None
+    if source.startswith(("http://", "https://")):
+        return recognize_from_url(source, detector, recognizer)
+    else:
+        # Treat as local file path
+        return recognize_from_file(source, detector, recognizer)
 
 def recognize_from_url(url, detector, recognizer):
     """Nhận diện khuôn mặt từ URL và hiển thị kết quả"""
@@ -135,15 +155,13 @@ def image_recognition_demo():
     
     # Sử dụng functions đã định nghĩa ở top level
     
-    # Thử nghiệm
-    test_image = "test.jpg"  # Thay đổi thành đường dẫn ảnh của bạn
-    if os.path.exists(test_image):
+    # Thử nghiệm nhanh (dùng hằng số ở đầu file)
+    if os.path.exists(DEFAULT_TEST_IMAGE):
         print("Nhận diện từ file local:")
-        recognize_from_file(test_image, detector, recognizer)
-    
-    test_url = "https://picsum.photos/400/400?random=3"
+        recognize_from_file(DEFAULT_TEST_IMAGE, detector, recognizer)
+
     print("Nhận diện từ URL:")
-    recognize_from_url(test_url, detector, recognizer)
+    recognize_from_url(DEFAULT_TEST_URL, detector, recognizer)
 
 if __name__ == "__main__":
     image_recognition_demo()

@@ -6,8 +6,7 @@ Giao diện đa trang với navigation
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
 import threading
-import cv2
-from PIL import Image, ImageTk
+from PIL import Image
 import os
 import sys
 
@@ -15,10 +14,9 @@ import sys
 from face_core.detector import FaceDetector
 from face_core.gallery import FaceGalleryManager
 from face_core.recognizer import FaceRecognizer
-from demos.image_demo import recognize_from_file, recognize_from_url, init_sample_gallery
+from demos.image_demo import recognize_from_source
 from demos.add_person_camera import smart_add_person_camera
-from utils.image_utils import load_image_from_url
-from utils.visualization import draw_faces
+from demos.webcam_realtime_demo import webcam_realtime_demo
 
 # Set appearance mode
 ctk.set_appearance_mode("dark")
@@ -100,7 +98,7 @@ class MultiPageFaceRecognitionApp:
             ("🏠 Home", "home", "blue"),
             ("📷 Image Recognition", "image", "green"), 
             ("🌐 URL Recognition", "url", "green"),
-            ("🎥 Webcam & Video", "webcam", "orange"),
+            ("🎥 Webcam Recognition", "webcam", "orange"),
             ("👥 Gallery Manager", "gallery", "orange"),
             ("⚙️ Settings", "settings", "gray")
         ]
@@ -342,13 +340,13 @@ class MultiPageFaceRecognitionApp:
         return page
     
     def create_webcam_page(self):
-        """Tạo trang webcam & video"""
+        """Tạo trang webcam"""
         page = ctk.CTkFrame(self.content_frame)
         
         # Title
         title = ctk.CTkLabel(
             page,
-            text="🎥 Webcam & Video Recognition",
+            text="🎥 Webcam Recognition",
             font=ctk.CTkFont(size=24, weight="bold")
         )
         title.pack(pady=30)
@@ -387,37 +385,6 @@ class MultiPageFaceRecognitionApp:
             fg_color="#ff6b35"
         )
         start_webcam_btn.pack(pady=20)
-        
-        # Video section
-        video_frame = ctk.CTkFrame(content_frame)
-        video_frame.pack(fill="x", padx=20, pady=20)
-        
-        video_title = ctk.CTkLabel(
-            video_frame,
-            text="🎬 Video File Recognition",
-            font=ctk.CTkFont(size=18, weight="bold")
-        )
-        video_title.pack(pady=20)
-        
-        video_desc = ctk.CTkLabel(
-            video_frame,
-            text="🎯 Process video files for face recognition\n" +
-                 "✅ Supports MP4, AVI, MOV, MKV formats\n" +
-                 "📊 Saves processed frames with results",
-            font=ctk.CTkFont(size=14)
-        )
-        video_desc.pack(pady=10)
-        
-        select_video_btn = ctk.CTkButton(
-            video_frame,
-            text="📁 Select Video File",
-            command=self.select_and_process_video,
-            width=250,
-            height=50,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            fg_color="#ff6b35"
-        )
-        select_video_btn.pack(pady=20)
         
         return page
     
@@ -603,7 +570,7 @@ class MultiPageFaceRecognitionApp:
                 "home": "📍 Home",
                 "image": "📍 Image Recognition", 
                 "url": "📍 URL Recognition",
-                "webcam": "📍 Webcam & Video",
+                "webcam": "📍 Webcam",
                 "gallery": "📍 Gallery Management",
                 "settings": "📍 Settings"
             }
@@ -644,11 +611,20 @@ class MultiPageFaceRecognitionApp:
             # Show preview
             self.show_image_preview(file_path)
             
-            # Process in thread
-            threading.Thread(
-                target=self._process_image_thread,
-                args=(file_path,)
-            ).start()
+            # Process directly in main thread để tránh matplotlib threading issues
+            try:
+                results = recognize_from_source(file_path, self.detector, self.recognizer)
+                
+                if results:
+                    self.image_status_label.configure(text=f"✅ Found {len(results)} faces")
+                else:
+                    self.image_status_label.configure(text="❌ No faces found")
+                    
+            except Exception as e:
+                self.image_status_label.configure(text=f"❌ Error: {e}")
+                messagebox.showerror("Error", f"Failed to process image:\n{str(e)}")
+            finally:
+                self.select_file_btn.configure(state="normal")
     
     def show_image_preview(self, file_path):
         """Hiển thị preview ảnh"""
@@ -669,41 +645,7 @@ class MultiPageFaceRecognitionApp:
         except Exception as e:
             self.image_preview.configure(text=f"Preview error: {e}")
     
-    def _process_image_thread(self, file_path):
-        """Xử lý ảnh trong thread riêng"""
-        try:
-            img_rgb, faces = self.detector.detect_faces(file_path)
-            
-            if faces:
-                results = []
-                for face in faces:
-                    embedding = self.detector.get_face_embedding(img_rgb, face)
-                    if embedding is not None:
-                        result = self.recognizer.recognize(embedding)
-                        results.append(result)
-                
-                img_with_results = draw_faces(img_rgb, faces, results)
-                
-                # Create results text
-                results_text = f"Found {len(faces)} face(s):\n"
-                for i, result in enumerate(results):
-                    results_text += f"• {result['result']} (Score: {result.get('score', 0):.3f})\n"
-                
-                # Show popup
-                self.root.after(0, lambda: self.create_result_popup(
-                    img_with_results,
-                    f"Recognition Result - {os.path.basename(file_path)}",
-                    results_text
-                ))
-                
-                self.root.after(0, lambda: self.image_status_label.configure(text=f"✅ Found {len(faces)} faces"))
-            else:
-                self.root.after(0, lambda: self.image_status_label.configure(text="❌ No faces found"))
-                
-        except Exception as e:
-            self.root.after(0, lambda: self.image_status_label.configure(text=f"❌ Error: {e}"))
-        finally:
-            self.root.after(0, lambda: self.select_file_btn.configure(state="normal"))
+
     
     def process_url_image(self):
         """Xử lý ảnh từ URL"""
@@ -714,68 +656,26 @@ class MultiPageFaceRecognitionApp:
         
         self.url_status_label.configure(text="🔄 Loading from URL...")
         
-        threading.Thread(
-            target=self._process_url_thread,
-            args=(url,)
-        ).start()
-    
-    def _process_url_thread(self, url):
-        """Xử lý URL trong thread riêng"""
+        # Process URL directly in main thread để tránh matplotlib threading issues
         try:
-            img = load_image_from_url(url)
-            if img is not None:
-                img_rgb, faces = self.detector.detect_faces(img)
-                
-                if faces:
-                    results = []
-                    for face in faces:
-                        embedding = self.detector.get_face_embedding(img_rgb, face)
-                        if embedding is not None:
-                            result = self.recognizer.recognize(embedding)
-                            results.append(result)
-                    
-                    img_with_results = draw_faces(img_rgb, faces, results)
-                    
-                    results_text = f"Found {len(faces)} face(s):\n"
-                    for i, result in enumerate(results):
-                        results_text += f"• {result['result']} (Score: {result.get('score', 0):.3f})\n"
-                    
-                    self.root.after(0, lambda: self.create_result_popup(
-                        img_with_results, "URL Recognition Result", results_text
-                    ))
-                    
-                    self.root.after(0, lambda: self.url_status_label.configure(text=f"✅ Found {len(faces)} faces"))
-                else:
-                    self.root.after(0, lambda: self.url_status_label.configure(text="❌ No faces found"))
+            results = recognize_from_source(url, self.detector, self.recognizer)
+            
+            if results:
+                self.url_status_label.configure(text=f"✅ Found {len(results)} faces")
             else:
-                self.root.after(0, lambda: self.url_status_label.configure(text="❌ Failed to load image"))
+                self.url_status_label.configure(text="❌ No faces found")
                 
         except Exception as e:
-            self.root.after(0, lambda: self.url_status_label.configure(text=f"❌ Error: {e}"))
+            self.url_status_label.configure(text=f"❌ Error: {e}")
+            messagebox.showerror("Error", f"Failed to process URL:\n{str(e)}")
     
     def start_webcam(self):
         """Khởi động webcam"""
         try:
-            from demos.webcam_realtime_demo import webcam_realtime_demo
             threading.Thread(target=webcam_realtime_demo).start()
             messagebox.showinfo("Webcam", "Webcam window opened separately")
         except Exception as e:
             messagebox.showerror("Error", f"Cannot start webcam: {e}")
-    
-    def select_and_process_video(self):
-        """Chọn và xử lý video"""
-        file_path = filedialog.askopenfilename(
-            title="Select Video",
-            filetypes=[("Video files", "*.mp4 *.avi *.mov *.mkv")]
-        )
-        
-        if file_path:
-            try:
-                from demos.video_demo import video_recognition_demo
-                threading.Thread(target=video_recognition_demo, args=(file_path,)).start()
-                messagebox.showinfo("Video", f"Processing video: {os.path.basename(file_path)}")
-            except Exception as e:
-                messagebox.showerror("Error", f"Cannot process video: {e}")
     
     def add_person_image(self):
         """Thêm người từ ảnh"""
@@ -801,21 +701,55 @@ class MultiPageFaceRecognitionApp:
     def add_person_camera(self):
         """Thêm người bằng camera"""
         try:
-            threading.Thread(target=smart_add_person_camera).start()
-            messagebox.showinfo("Camera", "Smart Add Person camera opened")
+            # Run smart_add_person_camera in background and refresh gallery when done
+            threading.Thread(target=self._add_person_camera_thread, daemon=True).start()
+            messagebox.showinfo("Camera", "Smart Add Person camera opened (press 'q' in camera window to finish)")
         except Exception as e:
             messagebox.showerror("Error", f"Cannot start camera: {e}")
+
+    def _add_person_camera_thread(self):
+        """Background runner for smart_add_person_camera that refreshes gallery after finish"""
+        try:
+            result = smart_add_person_camera()
+            print("smart_add_person_camera returned:", result)
+        except Exception as e:
+            print("smart_add_person_camera error:", e)
+            result = None
+
+        # Ensure GUI refresh runs on main thread
+        try:
+            self.root.after(0, self.refresh_gallery_view)
+        except Exception:
+            # fallback
+            self.refresh_gallery_view()
     
     def init_sample_gallery(self):
         """Khởi tạo gallery mẫu"""
         result = messagebox.askyesno("Confirm", "Initialize sample gallery?")
         if result:
             try:
-                init_sample_gallery(self.gallery_manager)
+                self.init_sample_gallery_local()
                 messagebox.showinfo("Success", "Sample gallery initialized")
                 self.refresh_gallery_view()
             except Exception as e:
                 messagebox.showerror("Error", f"Cannot initialize gallery: {e}")
+    
+    def init_sample_gallery_local(self):
+        """Initialize sample gallery với sample images"""
+        # Tạo sample data directory nếu chưa có
+        sample_dir = "sample_images"
+        if not os.path.exists(sample_dir):
+            os.makedirs(sample_dir)
+            
+        # Thông báo cho user thêm images vào folder
+        messagebox.showinfo(
+            "Sample Gallery", 
+            f"Please add sample images to '{sample_dir}' folder\n"
+            "Create subfolders for each person:\n"
+            "- sample_images/person1/image1.jpg\n"
+            "- sample_images/person2/image2.jpg\n\n"
+            "Sample gallery structure created!"
+        )
     
     def remove_person(self):
         """Xóa người"""
@@ -838,6 +772,15 @@ class MultiPageFaceRecognitionApp:
         for widget in self.gallery_scrollable.winfo_children():
             widget.destroy()
         
+        # Reload gallery manager from disk to ensure fresh data
+        try:
+            # Recreate gallery manager so it reloads saved data
+            self.gallery_manager = FaceGalleryManager(self.detector)
+            # Recreate recognizer so it picks up updated gallery embeddings
+            self.recognizer = FaceRecognizer(self.detector, self.gallery_manager)
+        except Exception:
+            pass
+
         # Get gallery data
         counts = self.gallery_manager.get_person_count()
         
@@ -876,63 +819,22 @@ class MultiPageFaceRecognitionApp:
     
     def update_threshold(self, value):
         """Cập nhật threshold"""
-        self.recognizer.threshold = value
-        # Update label (find the threshold label and update it)
-        # This is a simplified version - in real app you'd need to find the label
+        # Update threshold if recognizer has this attribute
+        if hasattr(self.recognizer, 'threshold'):
+            self.recognizer.threshold = value
+        
+        # Update threshold label text
+        threshold_label = None
+        for widget in self.pages["settings"].winfo_children():
+            if isinstance(widget, ctk.CTkFrame):
+                for child in widget.winfo_children():
+                    if isinstance(child, ctk.CTkFrame):
+                        for subchild in child.winfo_children():
+                            if isinstance(subchild, ctk.CTkLabel) and "Threshold" in subchild.cget("text"):
+                                subchild.configure(text=f"Recognition Threshold: {value:.2f}")
+                                return
     
-    def create_result_popup(self, img_array, title="Result", results_text=""):
-        """Tạo popup hiển thị kết quả"""
-        popup = ctk.CTkToplevel(self.root)
-        popup.title(title)
-        
-        # Calculate size
-        height, width = img_array.shape[:2]
-        max_size = 900
-        
-        if height > max_size or width > max_size:
-            scale = min(max_size/height, max_size/width)
-            new_width = int(width * scale)
-            new_height = int(height * scale)
-            img_array = cv2.resize(img_array, (new_width, new_height))
-        else:
-            new_width, new_height = width, height
-        
-        popup.geometry(f"{new_width + 100}x{new_height + 200}")
-        
-        # Main frame
-        main_frame = ctk.CTkFrame(popup)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
-        
-        # Image
-        img_pil = Image.fromarray(img_array)
-        img_tk = ImageTk.PhotoImage(img_pil)
-        
-        img_label = ctk.CTkLabel(main_frame, image=img_tk, text="")
-        img_label.pack(pady=20)
-        img_label.image = img_tk  # Keep reference
-        
-        # Results text
-        if results_text:
-            result_label = ctk.CTkLabel(
-                main_frame,
-                text=results_text,
-                font=ctk.CTkFont(size=14, weight="bold"),
-                justify="left"
-            )
-            result_label.pack(padx=20, pady=15)
-        
-        # Close button
-        close_btn = ctk.CTkButton(
-            main_frame,
-            text="Close",
-            command=popup.destroy,
-            width=100,
-            height=35
-        )
-        close_btn.pack(pady=10)
-        
-        popup.transient(self.root)
-        popup.grab_set()
+
     
     def run(self):
         """Chạy ứng dụng"""
