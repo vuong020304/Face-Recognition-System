@@ -6,7 +6,7 @@ Giao diện đa trang với navigation
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
 import threading
-from PIL import Image
+from PIL import Image, ImageTk
 import os
 import sys
 
@@ -710,18 +710,140 @@ class MultiPageFaceRecognitionApp:
     def _add_person_camera_thread(self):
         """Background runner for smart_add_person_camera that refreshes gallery after finish"""
         try:
-            result = smart_add_person_camera()
-            print("smart_add_person_camera returned:", result)
+            summary = smart_add_person_camera()
+            if isinstance(summary, dict):
+                cc = summary.get('capture_count', 0)
+                ug = len(summary.get('unknown_groups', []))
+                print(f"smart_add_person_camera finished: {cc} captures, {ug} unknown groups")
+            else:
+                print("smart_add_person_camera finished")
         except Exception as e:
             print("smart_add_person_camera error:", e)
-            result = None
+            summary = None
 
         # Ensure GUI refresh runs on main thread
         try:
+            if isinstance(summary, dict):
+                # schedule popup on main thread
+                self.root.after(0, lambda s=summary: self._show_camera_summary_popup(s))
+            # always refresh gallery after camera session
             self.root.after(0, self.refresh_gallery_view)
         except Exception:
             # fallback
+            if isinstance(summary, dict):
+                self._show_camera_summary_popup(summary)
             self.refresh_gallery_view()
+
+    def _show_camera_summary_popup(self, summary):
+        """Hiển thị popup tóm tắt sau khi camera đóng. Chạy trên main thread."""
+        try:
+            popup = ctk.CTkToplevel(self.root)
+            popup.title("Tóm tắt Smart Camera")
+            popup.geometry("700x520")
+
+            header = ctk.CTkLabel(popup, text=f"Hoàn thành - Đã chụp {summary.get('capture_count',0)} ảnh", font=ctk.CTkFont(size=16, weight="bold"))
+            header.pack(padx=12, pady=(12,6))
+
+            content = ctk.CTkFrame(popup)
+            content.pack(fill="both", expand=True, padx=12, pady=6)
+
+            existing = summary.get('existing_adds', {})
+            unknown_groups = summary.get('unknown_groups', [])
+
+            if existing:
+                lbl = ctk.CTkLabel(content, text="Người đã có - đã thêm ảnh:")
+                lbl.pack(anchor="w")
+                for name, cnt in existing.items():
+                    r = ctk.CTkLabel(content, text=f"  - {name}: {cnt} ảnh")
+                    r.pack(anchor="w")
+
+            entry_widgets = []
+            thumb_refs = []
+            if unknown_groups:
+                lbl2 = ctk.CTkLabel(content, text="\nNgười mới - nhập tên để lưu:")
+                lbl2.pack(anchor="w")
+
+                for idx, grp in enumerate(unknown_groups):
+                    subf = ctk.CTkFrame(content)
+                    subf.pack(fill="x", pady=6)
+
+                    rep = grp['images'][0]
+                    try:
+                        pil = Image.fromarray(rep)
+                    except Exception:
+                        pil = Image.new('RGB', (96,96), color=(200,200,200))
+                    pil.thumbnail((96,96))
+                    tkimg = ImageTk.PhotoImage(pil)
+                    thumb_refs.append(tkimg)
+                    img_lbl = ctk.CTkLabel(subf, image=tkimg, text="")
+                    img_lbl.pack(side="left", padx=(0,8))
+
+                    rightf = ctk.CTkFrame(subf)
+                    rightf.pack(side="left", fill="x", expand=True)
+
+                    v = ctk.StringVar()
+                    e = ctk.CTkEntry(rightf, textvariable=v, placeholder_text=f"Tên cho người #{idx+1}")
+                    e.pack(fill="x", expand=True, pady=(0,6))
+
+                    status_lbl = ctk.CTkLabel(rightf, text="Chưa lưu", text_color="gray60")
+                    status_lbl.pack(anchor="w")
+
+                    def make_save_fn(var, group, status_label):
+                        def save_one():
+                            name = var.get().strip()
+                            if not name:
+                                status_label.configure(text="Tên rỗng", text_color="#e74c3c")
+                                return
+                            added = 0
+                            for img in group.get('images', []):
+                                success, msg = self.gallery_manager.add_person(name, image=img)
+                                if success:
+                                    added += 1
+                            status_label.configure(text=f"Đã thêm {added} ảnh cho {name}", text_color="#2fa572")
+                            try:
+                                self.gallery_manager = FaceGalleryManager(self.detector)
+                                self.recognizer = FaceRecognizer(self.detector, self.gallery_manager)
+                            except Exception:
+                                pass
+                        return save_one
+
+                    save_btn = ctk.CTkButton(rightf, text="Lưu", width=80, command=make_save_fn(v, grp, status_lbl))
+                    save_btn.pack(anchor="e", pady=(6,0))
+
+                    entry_widgets.append((v, grp, status_lbl))
+
+            # Footer buttons
+            btn_frame = ctk.CTkFrame(popup)
+            btn_frame.pack(fill="x", padx=12, pady=(0,12))
+
+            def on_save_all():
+                for v, grp, status_lbl in entry_widgets:
+                    name = v.get().strip()
+                    if not name:
+                        continue
+                    added = 0
+                    for img in grp.get('images', []):
+                        success, msg = self.gallery_manager.add_person(name, image=img)
+                        if success:
+                            added += 1
+                    status_lbl.configure(text=f"Đã thêm {added} ảnh cho {name}", text_color="#2fa572")
+                try:
+                    self.gallery_manager = FaceGalleryManager(self.detector)
+                    self.recognizer = FaceRecognizer(self.detector, self.gallery_manager)
+                except Exception:
+                    pass
+                try:
+                    self.refresh_gallery_view()
+                except Exception:
+                    pass
+
+            close_btn = ctk.CTkButton(btn_frame, text="Đóng", command=popup.destroy)
+            close_btn.pack(side="right", padx=(6,0))
+            if entry_widgets:
+                save_all_btn = ctk.CTkButton(btn_frame, text="Lưu các tên đã nhập", command=on_save_all)
+                save_all_btn.pack(side="right", padx=(0,6))
+        except Exception as e:
+            print("Error showing camera summary popup:", e)
     
     def init_sample_gallery(self):
         """Khởi tạo gallery mẫu"""
