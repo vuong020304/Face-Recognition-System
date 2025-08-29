@@ -20,10 +20,7 @@ pip install -r requirements.txt
 
 ### Chạy ứng dụng
 ```bash
-# GUI đa trang (khuyến nghị)
-python run_multipage_gui.py
-
-# Hoặc trực tiếp
+# Ứng dụng
 python multipage_gui.py
 
 # Console menu
