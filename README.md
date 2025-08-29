@@ -6,9 +6,9 @@ Hệ thống nhận diện khuôn mặt sử dụng InsightFace với giao diệ
 
 - 📷 **Nhận diện từ ảnh** (JPG, PNG, BMP, GIF)
 - 🌐 **Nhận diện từ URL** trực tiếp 
-- 🎥 **Webcam real-time** và xử lý video
+- 🎥 **Webcam real-time** với camera
 - 👥 **Quản lý Gallery** (thêm/xóa/sửa người)
-- 🤖 **Smart Add Person** - tự động kiểm tra duplicate
+- 🤖 **Smart Add Person** - tự động thêm người
 - 📱 **Multi-page GUI** với navigation hiện đại
 
 ## 🚀 Cài đặt và chạy
@@ -40,14 +40,12 @@ Face-Detection/
 │   └── recognizer.py       # Face recognition
 ├── 📁 demos/               # Demo functions
 │   ├── image_demo.py       # Image recognition
-│   ├── video_demo.py       # Video processing
 │   ├── webcam_realtime_demo.py  # Real-time webcam
 │   └── add_person_camera.py     # Smart add person
 ├── 📁 utils/               # Utilities
 │   ├── image_utils.py      # Image processing
 │   └── visualization.py    # Drawing & display
 ├── multipage_gui.py        # 🎯 Main GUI application
-├── run_multipage_gui.py    # Launcher với auto-setup
 ├── main.py                 # Console interface
 └── requirements.txt        # Dependencies
 ```
@@ -58,7 +56,7 @@ Face-Detection/
 - 🏠 **Home**: Gallery stats và overview
 - 📷 **Image Recognition**: Chọn file ảnh + preview
 - 🌐 **URL Recognition**: Nhập URL ảnh
-- 🎥 **Webcam & Video**: Real-time và file processing
+- 🎥 **Webcam Recognition**: Real-time
 - 👥 **Gallery Manager**: Thêm/xóa người + gallery view
 - ⚙️ **Settings**: Theme và recognition threshold
 
@@ -87,7 +85,7 @@ requests>=2.26.0           # HTTP requests
 
 - **Detection**: ~50-100ms/image
 - **Accuracy**: >95% với gallery chất lượng tốt  
-- **Webcam**: 15-30 FPS
+- **Webcam**: 15-30 FPS với GPU
 - **Formats**: JPG, PNG, BMP, GIF, MP4, AVI
 
 ---
