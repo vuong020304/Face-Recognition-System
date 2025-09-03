@@ -42,9 +42,6 @@ def smart_add_person_camera():
     existing_adds = {}
     unknown_groups = []
     logs = []
-    tmp_dir = "tmp_captures"
-    if not os.path.exists(tmp_dir):
-        os.makedirs(tmp_dir)
 
     try:
         while True:
@@ -91,15 +88,21 @@ def smart_add_person_camera():
                         img = res.get('image')
                         placed = False
 
-                        # Save image to temp file to avoid keeping large numpy arrays in summary
-                        img_path = None
+                        # Prepare small RGB thumbnail (keep in-memory only)
+                        thumb = None
                         try:
                             if img is not None:
-                                bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-                                img_path = os.path.join(tmp_dir, f"capture_{int(time.time()*1000)}_{capture_count}.jpg")
-                                cv2.imwrite(img_path, bgr)
+                                rgb = img.copy()
+                                h, w = rgb.shape[:2]
+                                max_dim = 256
+                                if max(h, w) > max_dim:
+                                    scale = max_dim / float(max(h, w))
+                                    new_w = int(w * scale)
+                                    new_h = int(h * scale)
+                                    rgb = cv2.resize(rgb, (new_w, new_h), interpolation=cv2.INTER_AREA)
+                                thumb = rgb
                         except Exception:
-                            img_path = None
+                            thumb = None
 
                         if emb is not None:
                             for grp in unknown_groups:
@@ -111,8 +114,8 @@ def smart_add_person_camera():
                                 sim = num / den if den != 0 else 0.0
                                 if sim >= 0.7:
                                     grp.setdefault('embs', []).append(emb)
-                                    if img_path:
-                                        grp.setdefault('images_paths', []).append(img_path)
+                                    if thumb is not None:
+                                        grp.setdefault('images', []).append(thumb)
                                     # update mean embedding
                                     grp['mean_emb'] = np.mean(grp['embs'], axis=0)
                                     placed = True
@@ -121,7 +124,7 @@ def smart_add_person_camera():
                             new_grp = {
                                 'embs': [emb] if emb is not None else [],
                                 'mean_emb': emb if emb is not None else None,
-                                'images_paths': [img_path] if img_path is not None else []
+                                'images': [thumb] if thumb is not None else []
                             }
                             unknown_groups.append(new_grp)
                 else:
@@ -142,13 +145,13 @@ def smart_add_person_camera():
         cap.release()
         cv2.destroyAllWindows()
 
-    # Build sanitized summary (exclude raw embeddings and numpy arrays)
+    # Build sanitized summary (exclude raw embeddings, include in-memory small image arrays)
     sanitized_groups = []
     for grp in unknown_groups:
+        images = grp.get('images', []) if isinstance(grp.get('images', []), list) else []
         sanitized_groups.append({
-            'thumb_path': grp.get('images_paths', [None])[0],
-            'images_paths': grp.get('images_paths', []),
-            'count': len(grp.get('images_paths', []))
+            'images': images,  # list of small RGB numpy arrays for UI preview and saving
+            'count': len(images)
         })
 
     summary = {

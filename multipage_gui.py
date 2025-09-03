@@ -767,9 +767,15 @@ class MultiPageFaceRecognitionApp:
                     subf = ctk.CTkFrame(content)
                     subf.pack(fill="x", pady=6)
 
-                    rep = grp['images'][0]
+                    rep = None
+                    imgs = grp.get('images') or []
+                    if len(imgs) > 0:
+                        rep = imgs[0]
                     try:
-                        pil = Image.fromarray(rep)
+                        if rep is not None:
+                            pil = Image.fromarray(rep)
+                        else:
+                            raise ValueError("no image")
                     except Exception:
                         pil = Image.new('RGB', (96,96), color=(200,200,200))
                     pil.thumbnail((96,96))
