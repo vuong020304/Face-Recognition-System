@@ -11,10 +11,11 @@ import cv2
 import time
 import numpy as np
 from pathlib import Path
-    from face_core.detector import FaceDetector
-    from face_core.gallery import FaceGalleryManager
-    from face_core.recognizer import FaceRecognizer
-    from utils.image_utils import load_image_from_url
+
+from face_core.detector import FaceDetector
+from face_core.gallery import FaceGalleryManager
+from face_core.recognizer import FaceRecognizer
+from utils.image_utils import load_image_from_url
 from utils.visualization import show_image
 
 # ===== CONSTANTS =====
@@ -258,11 +259,10 @@ class FaceRecognitionApp:
         if not self.gallery_manager.gallery:
             print("⚠️  Gallery trống! Hãy thêm người trước.")
             return
-    
-            try:
-                from demos.webcam_realtime_demo import webcam_realtime_demo
-                webcam_realtime_demo()
-            except Exception as e:
+        try:
+            from demos.webcam_realtime_demo import webcam_realtime_demo
+            webcam_realtime_demo()
+        except Exception as e:
             print(f"❌ [CAMERA] Lỗi khi chạy nhận dạng realtime: {e}")
             print("🔧 Hãy thử: pip install opencv-contrib-python")
     
@@ -323,7 +323,7 @@ class FaceRecognitionApp:
         print("-" * 30)
         
         counts = self.gallery_manager.get_person_count()
-            if not counts:
+        if not counts:
             print("📭 Gallery trống!")
             return
         
@@ -352,7 +352,7 @@ class FaceRecognitionApp:
         success, msg = self.gallery_manager.remove_person(name_to_remove)
         if success:
             print(f"✅ {msg}")
-            else:
+        else:
             print(f"❌ {msg}")
     
     def find_and_remove_duplicates(self):
@@ -401,7 +401,7 @@ class FaceRecognitionApp:
                     if success:
                         print(f"   ✅ {msg}")
                         total_removed += 1
-        else:
+                    else:
                         print(f"   ❌ {msg}")
         
         print(f"\n🎉 Hoàn thành! Đã xóa {total_removed} ảnh duplicate")
@@ -494,12 +494,12 @@ def main():
     
     try:
         app = FaceRecognitionApp()
-    
-    if args.mode == 'menu':
+
+        if args.mode == 'menu':
             app.interactive_menu()
         elif args.mode == 'webcam':
             app.realtime_recognition()
-    elif args.mode == 'image':
+        elif args.mode == 'image':
             if args.input:
                 # Quick image recognition với path normalization
                 normalized_input = normalize_path(args.input)
@@ -516,7 +516,7 @@ def main():
         else:
             print(f"❌ [MODE] Unknown mode: {args.mode}")
 
-        except Exception as e:
+    except Exception as e:
         print(f"❌ [STARTUP] Lỗi khởi tạo ứng dụng: {e}")
         print("🔧 Hãy kiểm tra:")
         print("- Dependencies đã được cài đặt đầy đủ")
