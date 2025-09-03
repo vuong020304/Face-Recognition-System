@@ -2,14 +2,15 @@ import os
 import pickle
 import numpy as np
 from datetime import datetime
+from config import GALLERY_PATH, SIMILARITY_THRESHOLD
 
 class FaceGalleryManager:
     """Quản lý thư viện khuôn mặt"""
     
-    def __init__(self, detector, gallery_path='face_gallery.pkl'):
+    def __init__(self, detector, gallery_path=None):
         self.detector = detector
-        self.gallery_path = gallery_path
-        self.gallery = self._load_gallery() if os.path.exists(gallery_path) else {}
+        self.gallery_path = gallery_path or GALLERY_PATH
+        self.gallery = self._load_gallery() if os.path.exists(self.gallery_path) else {}
         
         if not self.gallery:
             print("Cảnh báo: Gallery trống. Sử dụng phương thức add_person để thêm người.")
@@ -24,7 +25,7 @@ class FaceGalleryManager:
         with open(self.gallery_path, 'wb') as f:
             pickle.dump(self.gallery, f)
     
-    def add_person(self, name, image_path=None, image=None, similarity_threshold=0.95):
+    def add_person(self, name, image_path=None, image=None, similarity_threshold=SIMILARITY_THRESHOLD):
         """Thêm người vào gallery"""
         # Trích xuất embedding
         embedding = self.detector.get_face_embedding(image_path if image is None else image)

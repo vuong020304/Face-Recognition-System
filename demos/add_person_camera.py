@@ -5,12 +5,10 @@ import numpy as np
 from face_core.detector import FaceDetector
 from face_core.gallery import FaceGalleryManager
 from face_core.recognizer import FaceRecognizer
-
-# ===== CONSTANTS =====
-CAPTURE_INTERVAL = 3  # Chụp mỗi 3 giây
-RECOGNITION_THRESHOLD = 0.6  # Threshold cho nhận dạng
-MAX_FACES_ALLOWED = 1  # Chỉ cho phép 1 khuôn mặt
-WAIT_TIME_AFTER_INPUT = 2  # Đợi 2 giây sau khi nhập tên
+from config import (
+    CAPTURE_INTERVAL, RECOGNITION_THRESHOLD,
+    MAX_FACES_ALLOWED, WAIT_TIME_AFTER_INPUT
+)
 
 def smart_add_person_camera():
     """Thêm người thông minh - tự động nhận diện và trả về summary.

@@ -5,20 +5,10 @@ from face_core.gallery import FaceGalleryManager
 from face_core.recognizer import FaceRecognizer
 from utils.image_utils import load_image_from_url
 from utils.visualization import draw_faces, show_image
-
-# ====== CONSTANTS ======
-# Sample images used when initializing a sample gallery
-SAMPLE_IMAGES = [
-    "https://picsum.photos/300/300?random=1",
-    "https://picsum.photos/300/300?random=2",
-]
-
-# Default test inputs for quick demo runs
-DEFAULT_TEST_IMAGE = "test.jpg"
-DEFAULT_TEST_URL = "https://picsum.photos/400/400?random=3"
-
-# Supported image file extensions (used in file dialogs elsewhere)
-SUPPORTED_IMAGE_EXT = "*.jpg *.jpeg *.png *.bmp *.gif"
+from config import (
+    SAMPLE_IMAGES, DEFAULT_TEST_IMAGE,
+    DEFAULT_TEST_URL, SUPPORTED_IMAGE_EXT
+)
 
 def init_sample_gallery(gallery_manager):
     """Khởi tạo gallery mẫu nếu gallery trống"""

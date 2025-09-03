@@ -3,13 +3,10 @@ import time
 from face_core.detector import FaceDetector
 from face_core.gallery import FaceGalleryManager
 from face_core.recognizer import FaceRecognizer
-
-# ===== CONSTANTS =====
-RECOGNITION_INTERVAL = 0.3  # Nhận dạng mỗi 0.3 giây (ưu tiên accuracy)
-RECOGNITION_THRESHOLD = 0.6  # Threshold cho nhận dạng
-CAMERA_FPS = 30  # Target FPS cho camera
-CAMERA_WIDTH = 1080  # Độ rộng camera
-CAMERA_HEIGHT = 720  # Độ cao camera
+from config import (
+    RECOGNITION_INTERVAL, RECOGNITION_THRESHOLD,
+    CAMERA_FPS, CAMERA_WIDTH, CAMERA_HEIGHT
+)
 
 def webcam_realtime_demo():
     """Demo webcam với nhận dạng realtime - chỉ hiển thị FPS"""

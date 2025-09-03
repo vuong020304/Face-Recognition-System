@@ -1,11 +1,8 @@
 import numpy as np
-
-# Constants
-DEFAULT_THRESHOLD = 0.5
-DEFAULT_TOP_K = 3
-NO_FACE_MSG = "No face detected"
-EMPTY_GALLERY_MSG = "Empty gallery"
-UNKNOWN_LABEL = "Unknown"
+from config import (
+    DEFAULT_THRESHOLD, DEFAULT_TOP_K, NO_FACE_MSG,
+    EMPTY_GALLERY_MSG, UNKNOWN_LABEL
+)
 
 class FaceRecognizer:
     """Nhận diện khuôn mặt"""

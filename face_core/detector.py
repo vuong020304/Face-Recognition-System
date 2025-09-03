@@ -1,11 +1,12 @@
 import cv2
 import numpy as np
 from insightface.app import FaceAnalysis
+from config import MODEL_NAME, CTX_ID, DET_SIZE
 
 class FaceDetector:
     """Phát hiện và xử lý khuôn mặt"""
     
-    def __init__(self, model_name="buffalo_l", ctx_id=0, det_size=(640, 640)):
+    def __init__(self, model_name=MODEL_NAME, ctx_id=CTX_ID, det_size=DET_SIZE):
         self.detector = FaceAnalysis(name=model_name)
         self.detector.prepare(ctx_id=ctx_id, det_size=det_size)
     
