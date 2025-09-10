@@ -95,18 +95,17 @@ Use this table to record and compare runtime / matching quality for different de
 and different embedding-comparison methods (cosine, euclid, ...). Fill values by
 running the benchmark script or manual tests.
 
-| Model pack | Embedding metric | Avg inference (ms) | Median (ms) | Avg match score (Img/Camera) | Best score | 
-|-------|------------------:|-------------------:|-----------:|----------------:|---------:|---------:|-------|
-| buffalo_l | cosine | 235.5/248.8 | 248.2 | 0.645/0.820 | 0.852 |
-| Retina10GF/ms1mv2r50 | cosine | 172.1/172.9 | 173 | 0.562/0.812 | 0.845 |
-| Retina10GF/glint360kr50 | cosine | 309.9/372.5 | 344.2 | 0.62/0.827 | 0.850 |
-|-------|------------------:|-------------------:|-----------:|----------------:|---------:|---------:|-------|
-| buffalo_m | cosine | 182.5/196.4 | 193.8 | 0.647/0.831 | 0.853 |
-| SCRFD10GF/w600kr50 | cosine | 223.6/222.3 | 220.9 | 0.645/0.826 | 0.854 |
-| SCRFD500MF/w600kr50 | cosine | 173.3/182.6 | 183.1 | 0.636/0.841 | 0.859 |
-| buffalo_s | cosine | 65.1/54 | 47.8 | 0.559/0.793 | 0.817 |
-| antelopev2 | cosine | 937.6/977.2 | 974.8 | 0.649/0.823 | 0.839 |
-| Retina500MF/glint360kr100 | cosine | 1012.1/1277.8 | 891.7 | 0.648/0.803 | 0.830 |
-| Retina2.5GF/glint360kr100 | cosine | 951.4/923.9 | 931.6 | 0.64/0.805 | 0.832 |
-| Retina10GF/glint360kr100 | cosine | 948.3/992 | 989.9 | 0.649/0.814 | 0.845 |
+| Model pack | Embedding metric | Avg inference (Img / Camera) (ms) | Median (ms) | Avg match score (Img / Camera) | Best score |
+|---|:---:|:---:|:---:|:---:|:---:|
+| buffalo_l | cosine | 235.5 / 248.8 | 248.2 | 0.645 / 0.820 | 0.852 |
+| Retina10GF/ms1mv2r50 | cosine | 172.1 / 172.9 | 173.0 | 0.562 / 0.812 | 0.845 |
+| Retina10GF/glint360kr50 | cosine | 309.9 / 372.5 | 344.2 | 0.620 / 0.827 | 0.850 |
+| buffalo_m | cosine | 182.5 / 196.4 | 193.8 | 0.647 / 0.831 | 0.853 |
+| SCRFD10GF/w600kr50 | cosine | 223.6 / 222.3 | 220.9 | 0.645 / 0.826 | 0.854 |
+| SCRFD500MF/w600kr50 | cosine | 173.3 / 182.6 | 183.1 | 0.636 / 0.841 | 0.859 |
+| buffalo_s | cosine | 65.1 / 54.0 | 47.8 | 0.559 / 0.793 | 0.817 |
+| antelopev2 | cosine | 937.6 / 977.2 | 974.8 | 0.649 / 0.823 | 0.839 |
+| Retina500MF/glint360kr100 | cosine | 1012.1 / 1277.8 | 891.7 | 0.648 / 0.803 | 0.830 |
+| Retina2.5GF/glint360kr100 | cosine | 951.4 / 923.9 | 931.6 | 0.640 / 0.805 | 0.832 |
+| Retina10GF/glint360kr100 | cosine | 948.3 / 992.0 | 989.9 | 0.649 / 0.814 | 0.845 |
 
