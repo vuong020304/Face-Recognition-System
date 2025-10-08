@@ -1,5 +1,6 @@
 import os
 import cv2
+import time
 from face_core.detector import FaceDetector
 from face_core.gallery import FaceGalleryManager
 from face_core.recognizer import FaceRecognizer
@@ -33,10 +34,13 @@ def recognize_from_file(image_path, detector, recognizer):
         print(f"Không thể đọc ảnh từ {image_path}")
         return None
     
+    t0 = time.perf_counter()
     img_rgb, faces = detector.detect_faces(img)
     if faces is None or len(faces) == 0:
         print("Không phát hiện khuôn mặt nào")
-        show_image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), "Không phát hiện khuôn mặt")
+        t1 = time.perf_counter()
+        elapsed_ms = (t1 - t0) * 1000.0
+        print(f"No faces - {elapsed_ms:.1f} ms")
         return None
     
     results = []
@@ -51,7 +55,10 @@ def recognize_from_file(image_path, detector, recognizer):
                 for name, score in result['top_matches'][:3]:
                     print(f"  - {name}: {score:.3f}")
     
-    # Vẽ kết quả lên ảnh và hiển thị
+    # Vẽ kết quả (không hiển thị) và tính thời gian inference-only
+    t1 = time.perf_counter()
+    elapsed_ms = (t1 - t0) * 1000.0
+
     img_with_results = draw_faces(img_rgb, faces, results)
     
     # Tạo title đơn giản dựa trên kết quả nhận diện
@@ -66,8 +73,18 @@ def recognize_from_file(image_path, detector, recognizer):
     else:
         title = "Không nhận diện được"
     
-    show_image(img_with_results, title)
-    
+    # Print per-face detection with inference-only time (terminal only)
+    for i, res in enumerate(results):
+        name = res.get('result')
+        score = res.get('score', 0)
+        print(f"Khuôn mặt {i+1}: {name} (Score: {score:.3f}) - {elapsed_ms:.1f} ms")
+
+    # Also show popup with results (restore previous behavior)
+    try:
+        show_image(img_with_results, title)
+    except Exception:
+        pass
+
     return results
 
 def recognize_from_source(source, detector, recognizer):
@@ -93,10 +110,13 @@ def recognize_from_url(url, detector, recognizer):
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     
     # Phát hiện khuôn mặt
+    t0 = time.perf_counter()
     _, faces = detector.detect_faces(img)
     if faces is None or len(faces) == 0:
         print("Không phát hiện khuôn mặt nào")
-        show_image(img_rgb, "Không phát hiện khuôn mặt")
+        t1 = time.perf_counter()
+        elapsed_ms = (t1 - t0) * 1000.0
+        print(f"No faces - {elapsed_ms:.1f} ms")
         return None
     
     # Nhận diện khuôn mặt
@@ -112,9 +132,12 @@ def recognize_from_url(url, detector, recognizer):
                 for name, score in result['top_matches'][:3]:
                     print(f"  - {name}: {score:.3f}")
     
-    # Vẽ kết quả lên ảnh và hiển thị
+    # Vẽ kết quả (không hiển thị) và tính thời gian inference-only
+    t1 = time.perf_counter()
+    elapsed_ms = (t1 - t0) * 1000.0
+
     img_with_results = draw_faces(img_rgb, faces, results)
-    
+
     # Tạo title đơn giản dựa trên kết quả nhận diện
     if len(results) == 1:
         # Một khuôn mặt
@@ -127,8 +150,18 @@ def recognize_from_url(url, detector, recognizer):
     else:
         title = "Không nhận diện được"
     
-    show_image(img_with_results, title)
-    
+    # Print per-face detection with inference-only time (terminal only)
+    for i, res in enumerate(results):
+        name = res.get('result')
+        score = res.get('score', 0)
+        print(f"Khuôn mặt {i+1}: {name} (Score: {score:.3f}) - {elapsed_ms:.1f} ms")
+
+    # Show popup with results
+    try:
+        show_image(img_with_results, title)
+    except Exception:
+        pass
+
     return results
 
 def image_recognition_demo():

@@ -5,7 +5,7 @@ CAMERA_HEIGHT = 720  # Độ cao camera
 
 # Face Detection & Recognition
 RECOGNITION_INTERVAL = 0.3  # Nhận dạng mỗi 0.3 giây (ưu tiên accuracy)
-RECOGNITION_THRESHOLD = 0.6  # Threshold cho nhận dạng
+RECOGNITION_THRESHOLD = 0.5  # Threshold cho nhận dạng
 DEFAULT_THRESHOLD = 0.5  # Default threshold cho face recognition
 DEFAULT_TOP_K = 3  # Số lượng kết quả top matches trả về
 SIMILARITY_THRESHOLD = 0.95  # Threshold cho việc kiểm tra ảnh trùng lặp

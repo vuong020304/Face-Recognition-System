@@ -33,6 +33,7 @@ class FaceRecognizer:
             return image
         return self.detector.get_face_embedding(image)
     
+    #Cosine similarity
     def _match_with_gallery(self, embedding):
         """So khớp embedding với gallery"""
         matches = []
@@ -41,6 +42,28 @@ class FaceRecognizer:
             best_score = max(scores) if scores else 0
             matches.append((name, best_score))
         return matches
+    
+    '''#Euclidean distance
+    def _match_with_gallery(self, embedding, use_euclid=False):
+        matches = []
+        for name, embeddings in self.gallery_manager.gallery.items():
+            if use_euclid:
+                # Euclid -> lấy khoảng cách nhỏ nhất
+                dists = [np.linalg.norm(embedding - e) for e in embeddings]
+                if dists:
+                    mind = min(dists)
+                    # OPTION A: giữ dạng 'lớn hơn tốt' bằng cách đảo dấu
+                    best_score = -mind
+                    # OPTION B (thích hợp nếu muốn [0,1] similarity): best_score = 1.0 / (1.0 + mind)
+                else:
+                    best_score = -np.inf
+            else:
+                # Cosine similarity (embedding nên đã L2-normalized)
+                scores = [np.dot(embedding, e) for e in embeddings]
+                best_score = max(scores) if scores else 0.0
+
+            matches.append((name, best_score))
+        return matches'''
     
     def _format_results(self, matches, top_k):
         """Format kết quả cuối cùng"""

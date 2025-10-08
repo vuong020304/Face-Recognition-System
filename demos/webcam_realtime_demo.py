@@ -1,5 +1,6 @@
 import cv2
 import time
+import statistics
 from face_core.detector import FaceDetector
 from face_core.gallery import FaceGalleryManager
 from face_core.recognizer import FaceRecognizer
@@ -42,6 +43,8 @@ def webcam_realtime_demo():
     
     # Cache kết quả để tránh flickering
     cached_results = []
+    # Per-person score history for session summary
+    per_person_scores = {}
     
     try:
         while True:
@@ -55,8 +58,9 @@ def webcam_realtime_demo():
             
             # Nhận dạng với interval để ưu tiên accuracy
             if current_time - last_recognition_time >= RECOGNITION_INTERVAL:
+                t0 = time.perf_counter()
                 img_rgb, faces = detector.detect_faces(frame)
-                
+
                 if faces is not None and len(faces) > 0:
                     cached_results = []
                     for face in faces:
@@ -67,14 +71,28 @@ def webcam_realtime_demo():
                                 'bbox': face.bbox.astype(int),
                                 'result': result
                             })
-                            
-                            # In kết quả ra console
-                            name = result['result']
-                            score = result.get('score', 0)
-                            print(f"👤 Detected: {name} (Score: {score:.3f})")
                 else:
                     cached_results = []
-                
+
+                t1 = time.perf_counter()
+                elapsed_ms = (t1 - t0) * 1000.0
+                # record sample for session-average
+                if 'proc_samples' not in locals():
+                    proc_samples = []
+                proc_samples.append(elapsed_ms)
+
+                # Print detection results with inference time on same line
+                if cached_results:
+                    for result_info in cached_results:
+                        name = result_info['result']['result']
+                        score = result_info['result'].get('score', 0)
+                        print(f"👤 Detected: {name} (Score: {score:.3f}) - {elapsed_ms:.1f} ms")
+                        # record per-person score for session summary
+                        try:
+                            per_person_scores.setdefault(name, []).append(float(score))
+                        except Exception:
+                            pass
+
                 last_recognition_time = current_time
             
             # Vẽ kết quả lên frame
@@ -138,6 +156,43 @@ def webcam_realtime_demo():
         print(f"   ⏱️  Thời gian chạy: {total_time:.1f}s")
         print(f"   🎞️  Tổng frames: {frame_count}")
         print(f"   📈 FPS trung bình: {avg_fps:.1f}")
+
+        # If we recorded inference samples during the session, print summary
+        if 'proc_samples' in locals() and proc_samples:
+            count = len(proc_samples)
+            avg_ms = sum(proc_samples) / count
+            try:
+                median_ms = statistics.median(proc_samples)
+            except Exception:
+                median_ms = sorted(proc_samples)[count//2]
+            print(f"\n🧾 Inference time summary:")
+            print(f"   - Samples: {count}")
+            print(f"   - Avg: {avg_ms:.1f} ms")
+            print(f"   - Median: {median_ms:.1f} ms")
+        else:
+            print("\n🧾 No inference samples recorded during session.")
+
+        # Per-person average score summary (session)
+        if per_person_scores:
+            print("\n📋 Per-person score summary:")
+            # compute avg and count, sort by avg desc then count desc
+            summary = []
+            for name, scores in per_person_scores.items():
+                try:
+                    avg_score = sum(scores) / len(scores) if scores else 0.0
+                    best_score = max(scores) if scores else 0.0
+                except Exception:
+                    avg_score = 0.0
+                    best_score = 0.0
+                # name, count, avg, best
+                summary.append((name, len(scores), avg_score, best_score))
+            # sort by best_score desc, then avg_score desc, then count desc
+            summary.sort(key=lambda x: (x[3], x[2], x[1]), reverse=True)
+            for name, cnt, avg_score, best_score in summary:
+                print(f"   - {name}: samples={cnt}, avg_score={avg_score:.3f}, best_score={best_score:.3f}")
+        else:
+            print("\n📋 No per-person scores recorded.")
+
         print("✅ Đã thoát webcam demo")
 
 if __name__ == "__main__":
