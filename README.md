@@ -2,6 +2,23 @@
 
 Hệ thống nhận diện khuôn mặt sử dụng InsightFace với giao diện đa trang hiện đại.
 
+## 📸 Giao diện hệ thống
+
+### Giao diện chính
+![Main Interface](images/main_interface.png)
+
+### Nhận dạng từ ảnh
+![Image Recognition](images/image_recognition.png)
+
+### Nhận dạng từ webcam
+![Webcam Recognition](images/webcam_recognition.png)
+
+### Quản lý Gallery
+![Gallery Management](images/gallery_management.png)
+
+### Thêm người mới
+![Add Person](images/add_person.png)
+
 ## ✨ Tính năng chính
 
 - 📷 **Nhận diện từ ảnh** (JPG, PNG, BMP, GIF)
